@@ -7,17 +7,11 @@ st.set_page_config(
 )
 
 st.title("Mineral Deficiency Awareness Tool")
-#st.caption(
-   # "Educational screening tool to explore possible mineral-related symptoms. "
-    #"This tool does NOT diagnose or replace medical care."
-#)
-
 st.divider()
 
 # -------------------------------
 # Symptom input (Present / Absent)
 # -------------------------------
-
 st.subheader("Select symptoms you are currently experiencing:")
 
 symptoms = {
@@ -36,15 +30,11 @@ symptoms = {
 }
 
 # Convert Present / Absent → 1 / 0
-symptom_vector = pd.Series({
-    k: 1 if v == "Present" else 0
-    for k, v in symptoms.items()
-})
+symptom_vector = pd.Series({k: 1 if v == "Present" else 0 for k, v in symptoms.items()})
 
 # -------------------------------
 # Symptom–Mineral Weight Table
 # -------------------------------
-
 weights = pd.DataFrame({
     "Iron":        [3,2,3,0,0,2,2,2,2,0,2,1],
     "Vitamin B12": [3,2,2,3,1,1,3,1,1,0,2,2],
@@ -58,22 +48,11 @@ weights = pd.DataFrame({
 # -------------------------------
 # Compute scores
 # -------------------------------
-
 scores = symptom_vector.dot(weights)
 
-st.divider()
-
 # -------------------------------
-# Output logic
+# Function to classify score
 # -------------------------------
-any_symptom_selected = sum(symptom_inputs.values()) > 0
-if any_symptom_selected and scores.max() < 5:
-    st.warning(
-        "Your symptoms do not strongly align with common mineral deficiencies. "
-        "If symptoms persist, consider seeking medical evaluation."
-    )
-else:
-    results = scores.sort_values(ascending=False)
 def classify_score(score):
     if score >= 12:
         return "High likelihood"
@@ -82,30 +61,39 @@ def classify_score(score):
     else:
         return None
 
+# -------------------------------
+# Output logic
+# -------------------------------
+any_symptom_selected = symptom_vector.sum() > 0
 
-results = pd.DataFrame({
-    "Mineral": scores.index,
-    "Score": scores.values
-})
-results["Likelihood"] = results["Score"].apply(classify_score)
-results = results.dropna(subset=["Likelihood"])
-top_results = results.sort_values("Score", ascending=False).head(3)
+if not any_symptom_selected:
+    st.info("Select at least one symptom to see possible mineral deficiency insights.")
+else:
+    if scores.max() < 5:
+        st.warning(
+            "Your symptoms do not strongly align with common mineral deficiencies. "
+            "If symptoms persist, consider seeking medical evaluation."
+        )
+    else:
+        results = pd.DataFrame({
+            "Mineral": scores.index,
+            "Score": scores.values
+        })
+        results["Likelihood"] = results["Score"].apply(classify_score)
+        results = results.dropna(subset=["Likelihood"])
+        top_results = results.sort_values("Score", ascending=False).head(3)
 
-if any_symptom_selected and not top_results.empty:
-    st.subheader("Most Relevant Mineral Deficiencies")
-    for _, row in top_results.iterrows():
-        st.write(f"• **{row['Mineral']}** — {row['Likelihood']}")
-if any_symptom_selected and top_results.empty:
-    st.info(
-        "Your symptoms do not strongly suggest a common mineral deficiency. "
-        "This tool is for awareness only and does not replace clinical evaluation."
-    )
-
-
-    
+        if not top_results.empty:
+            st.subheader("Most Relevant Mineral Deficiencies")
+            for _, row in top_results.iterrows():
+                st.write(f"• **{row['Mineral']}** — {row['Likelihood']}")
+        else:
+            st.info(
+                "Your symptoms do not strongly suggest a common mineral deficiency. "
+                "This tool is for awareness only and does not replace clinical evaluation."
+            )
 
 st.divider()
-
 st.caption(
     "⚠️ Disclaimer: This tool is for educational purposes only and does not "
     "diagnose, treat, or recommend supplements. Always consult a healthcare professional."
