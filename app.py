@@ -66,26 +66,43 @@ st.divider()
 # -------------------------------
 # Output logic
 # -------------------------------
-
-if scores.max() < 5:
+any_symptom_selected = sum(symptom_inputs.values()) > 0
+if any_symptom_selected and scores.max() < 5:
     st.warning(
         "Your symptoms do not strongly align with common mineral deficiencies. "
-        "If symptoms persist or worsen, consider seeking medical evaluation."
+        "If symptoms persist, consider seeking medical evaluation."
     )
 else:
     results = scores.sort_values(ascending=False)
+def classify_score(score):
+    if score >= 12:
+        return "High likelihood"
+    elif score >= 7:
+        return "Moderate likelihood"
+    else:
+        return None
 
-    st.subheader("Nutrient Likelihood Summary")
 
-    for nutrient, score in results.items():
-        if score >= 14:
-            label = "High likelihood"
-        elif score >= 8:
-            label = "Moderate likelihood"
-        else:
-            label = "Low likelihood"
+results = pd.DataFrame({
+    "Mineral": scores.index,
+    "Score": scores.values
+})
+results["Likelihood"] = results["Score"].apply(classify_score)
+results = results.dropna(subset=["Likelihood"])
+top_results = results.sort_values("Score", ascending=False).head(3)
 
-        st.write(f"**{nutrient}** — {label}")
+if any_symptom_selected and not top_results.empty:
+    st.subheader("Most Relevant Mineral Deficiencies")
+    for _, row in top_results.iterrows():
+        st.write(f"• **{row['Mineral']}** — {row['Likelihood']}")
+        if any_symptom_selected and top_results.empty:
+    st.info(
+        "Your symptoms do not strongly suggest a common mineral deficiency. "
+        "This tool is for awareness only and does not replace clinical evaluation."
+    )
+
+
+    
 
 st.divider()
 
