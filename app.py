@@ -95,7 +95,7 @@ if any_symptom_selected and not top_results.empty:
     st.subheader("Most Relevant Mineral Deficiencies")
     for _, row in top_results.iterrows():
         st.write(f"• **{row['Mineral']}** — {row['Likelihood']}")
-        if any_symptom_selected and top_results.empty:
+if any_symptom_selected and top_results.empty:
     st.info(
         "Your symptoms do not strongly suggest a common mineral deficiency. "
         "This tool is for awareness only and does not replace clinical evaluation."
